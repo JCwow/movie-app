@@ -16,15 +16,17 @@ const Search = () => {
     useEffect(() => {
         const timeoutId = setTimeout(async () => {
             if(searchQuery.trim()){
-                await loadMovies();
-                if(movies?.length > 0 && movies?.[0])
-                    await updateSearchCount(searchQuery, movies[0]);
+                const fetchedMovies = await loadMovies();
+                if(fetchedMovies && Array.isArray(fetchedMovies) && fetchedMovies.length > 0 && fetchedMovies[0])
+                    await updateSearchCount(searchQuery, fetchedMovies[0]);
             }else{
                 reset()
             }
         }, 500);
         return () => clearTimeout(timeoutId);
     }, [searchQuery])
+
+    
     
     return (
         <View className="flex-1 bg-primary">
