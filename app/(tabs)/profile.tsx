@@ -1,9 +1,13 @@
-import { Text, View } from "react-native";
-
+import { icons } from '@/constants/icons';
+import React from 'react';
+import { Image, Text, View } from "react-native";
 export default function Profile() {
   return (
-    <View className="flex-1 justify-center items-center">
-      <Text className="text-2xl">Profile</Text>
+    <View className="bg-primary flex-1 px-10">
+      <View className="flex justify-center items-center flex-1 flex-col gap-5">
+        <Image source={icons.person} className="size-10" tintColor={"#fff"}></Image>
+        <Text className="text-gray-500 text-base">Profile</Text>
+      </View>
     </View>
   );
 }
