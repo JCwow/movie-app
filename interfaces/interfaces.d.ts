@@ -75,3 +75,14 @@ interface TrendingCardProps {
   movie: TrendingMovie;
   index: number;
 }
+
+interface SavedMovie {
+  $id: string;
+  movie_id: number;
+  title: string;
+  poster_path: string | null;
+  release_date: string;
+  vote_average: number;
+  overview: string | null;
+  createdAt: string;
+}

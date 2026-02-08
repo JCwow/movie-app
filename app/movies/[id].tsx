@@ -1,9 +1,10 @@
 import { icons } from '@/constants/icons';
 import { fetchMovieDetails } from '@/services/api';
+import { isMovieSaved, saveMovie, unsaveMovie } from '@/services/appwrite';
 import useFetch from '@/services/useFetch';
 import { router, useLocalSearchParams } from 'expo-router';
-import React from 'react';
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 interface MovieInfoProps {
     label: string;
@@ -20,14 +21,60 @@ const MovieInfo = ({label, value}: MovieInfoProps) => (
 const MovieDetails = () => {
     const { id } = useLocalSearchParams();
     const { data: movie, loading} = useFetch(() => fetchMovieDetails(id as string));
+    const [isSaved, setIsSaved] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        const checkSavedStatus = async () => {
+            if (movie?.id) {
+                const saved = await isMovieSaved(movie.id);
+                setIsSaved(saved);
+            }
+        };
+        checkSavedStatus();
+    }, [movie?.id]);
+
+    const handleSaveToggle = async () => {
+        if (!movie) return;
+        
+        setSaving(true);
+        try {
+            if (isSaved) {
+                await unsaveMovie(movie.id);
+                setIsSaved(false);
+            } else {
+                await saveMovie(movie);
+                setIsSaved(true);
+            }
+        } catch (error) {
+            Alert.alert('Error', 'Failed to save/unsave movie. Please try again.');
+            console.error(error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     return (
         <View className="bg-primary flex-1">
             <ScrollView contentContainerStyle={{paddingBottom: 80}}>
-                <View>
+                <View className="relative">
                     <Image source={{uri: `https://image.tmdb.org/t/p/w500${movie?.poster_path}`}} className="w-full h-[550px]" resizeMode="stretch"></Image>
+                    <TouchableOpacity
+                        onPress={handleSaveToggle}
+                        disabled={saving || !movie}
+                        className="absolute top-12 right-5 bg-dark-100/80 rounded-full p-3"
+                    >
+                        <Image 
+                            source={icons.save} 
+                            className="size-6" 
+                            tintColor={isSaved ? "#FF6B6B" : "#A8B5DB"}
+                        />
+                    </TouchableOpacity>
                 </View>
                 <View className="flex-col items-start justify-center mt-5 px-5">
-                    <Text className='text-white font-bold text-xl'>{movie?.title}</Text>
+                    <View className="flex-row items-center justify-between w-full">
+                        <Text className='text-white font-bold text-xl flex-1'>{movie?.title}</Text>
+                    </View>
                     <View className="flex-row items-center gap-x-1 mt-2">
                         <Text className="text-light-200 text-sm">{movie?.release_date?.split('-')[0]}</Text>
                         <Text className="text-light-200 text-sm">{movie?.runtime} m</Text>
@@ -40,8 +87,8 @@ const MovieDetails = () => {
                     <MovieInfo label="Overview" value={movie?.overview}></MovieInfo>
                     <MovieInfo label="Genres" value={movie?.genres?.map((g) => g.name).join(' - ') || 'N/A'}></MovieInfo>
                     <View className="flex flex-row justify-between w-1/2">
-                        <MovieInfo label="Budget" value={`$${movie?.budget / 1_000_000} million`}></MovieInfo>
-                        <MovieInfo label="Revenue" value={`$${Math.round(movie?.revenue) / 1_000_000}`}></MovieInfo>
+                        <MovieInfo label="Budget" value={movie?.budget ? `$${movie.budget / 1_000_000} million` : 'N/A'}></MovieInfo>
+                        <MovieInfo label="Revenue" value={movie?.revenue ? `$${Math.round(movie.revenue) / 1_000_000} million` : 'N/A'}></MovieInfo>
                     </View>
                     <MovieInfo label="Production Companies" value={movie?.production_companies.map((c) => c.name).join(' - ') || 'N/A'}></MovieInfo>
                 </View>
